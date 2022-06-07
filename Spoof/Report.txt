@@ -1,0 +1,3 @@
+Report:
+TC1:	lines - 11,	Time - 32.1894128
+TC2:	lines - 12,	Time - 33.8382283

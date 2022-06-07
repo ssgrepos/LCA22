@@ -1,0 +1,4 @@
+include "UptaneFullModel.cspm"
+include "Spoof\TC1.cspm"
+include "Spoof\TC2.cspm"
+assert NoSpoof [] TC1 [] TC2 [T= Spoof_Uptane(2)
