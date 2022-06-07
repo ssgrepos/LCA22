@@ -1,0 +1,2 @@
+include  "UptaneFullModel.cspm"
+assert NoFreeze [T= Freeze_Uptane(2)
