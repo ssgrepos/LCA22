@@ -1,0 +1,79 @@
+TC2=
+get_manifesto_from_Secondary_storage.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+ECU_SendM.SecondaryECU.PrimaryECU.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+ECU_RecvM.PrimaryECU.SecondaryECU.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+get_manifesto_from_Primary_storage.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+SendM.PrimaryECU.Director.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+RecvM.Director.PrimaryECU.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+get_manifesto_from_Director_storage.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_new, MPCH.ID_Secondary.Firmware_new> ->
+SendS.Director.PrimaryECU.Update ->
+RecvS.PrimaryECU.Director.Update ->
+get_metadata_from_storage.RootFile.1 ->
+Send.PrimaryECU.Director.RequestMetadata.Root.RootFile.2 ->
+Recv.Director.PrimaryECU.RequestMetadata.Root.RootFile.2 ->
+get_metadata_from_root_storage.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets>.EncR.RoleSKey.Root.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets> ->
+Send.Director.PrimaryECU.ResponseRootMetadata.RM.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets>.EncR.RoleSKey.Root.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets> ->
+Recv.PrimaryECU.Director.ResponseRootMetadata.RM.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets>.EncR.RoleSKey.Root.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets> ->
+replace_metadata_from_storage.RootFile.2 ->
+get_metadata_from_storage.TimeStampFilename.1 ->
+Send.PrimaryECU.Director.RequestMetadata.TimeStamp.TimeStampFilename.2 ->
+Recv.Director.PrimaryECU.RequestMetadata.TimeStamp.TimeStampFilename.2 ->
+get_metadata_from_timestamp_storage.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new ->
+Send.Director.PrimaryECU.ResponseTimestampMetadata.TSM.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new ->
+Recv.PrimaryECU.Director.ResponseTimestampMetadata.TSM.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new ->
+replace_metadata_from_storage.TimeStampFilename.2 ->
+get_metadata_from_storage.SnapshotFilename.1 ->
+Send.PrimaryECU.Director.RequestMetadata.SnapShot.SnapshotFilename.2 ->
+Recv.Director.PrimaryECU.RequestMetadata.SnapShot.SnapshotFilename.2 ->
+get_metadata_from_snapshot_storage.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3> ->
+Send.Director.PrimaryECU.ResponseSnapshotMetadata.SM.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3> ->
+Recv.PrimaryECU.Director.ResponseSnapshotMetadata.SM.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3> ->
+get_metadata_from_storage.TargetsFilename1.1 ->
+replace_metadata_from_storage.SnapshotFilename.2 ->
+get_metadata_from_storage.TargetsFilename1.1 ->
+Send.PrimaryECU.Director.RequestMetadata.Targets.TargetsFilename1.2 ->
+Recv.Director.PrimaryECU.RequestMetadata.Targets.TargetsFilename1.2 ->
+get_metadata_from_targets_storage.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+Send.Director.PrimaryECU.ResponseTargetsMetadata.TM.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+Recv.PrimaryECU.Director.ResponseTargetsMetadata.TM.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+replace_metadata_from_storage.TargetsFilename1.2 ->
+ECU_SendS.PrimaryECU.SecondaryECU.Update ->
+ECU_RecvS.SecondaryECU.PrimaryECU.Update ->
+get_metadata_from_storage.TargetsFilename1.1 ->
+ECU_Send.SecondaryECU.PrimaryECU.RequestMetadata.Targets.TargetsFilename1.2 ->
+ECU_Recv.PrimaryECU.SecondaryECU.RequestMetadata.Targets.TargetsFilename1.2 ->
+ECU_Send.PrimaryECU.SecondaryECU.ResponseTargetsMetadata.TM.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+ECU_Recv.SecondaryECU.PrimaryECU.ResponseTargetsMetadata.TM.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+get_manifesto_from_Secondary_storage.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+ECU_SendM.SecondaryECU.PrimaryECU.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+ECU_RecvM.PrimaryECU.SecondaryECU.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+get_metadata_from_storage.RootFile.2 ->
+Send.PrimaryECU.ImageRepo.RequestMetadata.Root.RootFile.3 ->
+Recv.ImageRepo.PrimaryECU.RequestMetadata.Root.RootFile.3 ->
+get_metadata_from_root_storage.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets>.EncR.RoleSKey.Root.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets> ->
+Send.ImageRepo.PrimaryECU.ResponseRootMetadata.RM.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets>.EncR.RoleSKey.Root.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets> ->
+Recv.PrimaryECU.ImageRepo.ResponseRootMetadata.RM.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets>.EncR.RoleSKey.Root.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root, RolePKeyHeader.TimeStamp.RolePKey.TimeStamp, RolePKeyHeader.SnapShot.RolePKey.SnapShot, RolePKeyHeader.Targets.RolePKey.Targets> ->
+replace_metadata_from_storage.RootFile.3 ->
+get_metadata_from_storage.TimeStampFilename.2 ->
+Send.PrimaryECU.ImageRepo.RequestMetadata.TimeStamp.TimeStampFilename.3 ->
+Recv.ImageRepo.PrimaryECU.RequestMetadata.TimeStamp.TimeStampFilename.3 ->
+get_metadata_from_timestamp_storage.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new ->
+Send.ImageRepo.PrimaryECU.ResponseTimestampMetadata.TSM.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new ->
+Recv.PrimaryECU.ImageRepo.ResponseTimestampMetadata.TSM.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.3.HashingFirmware.Firmware_new ->
+replace_metadata_from_storage.TimeStampFilename.3 ->
+get_metadata_from_storage.SnapshotFilename.2 ->
+Send.PrimaryECU.ImageRepo.RequestMetadata.SnapShot.SnapshotFilename.3 ->
+Recv.ImageRepo.PrimaryECU.RequestMetadata.SnapShot.SnapshotFilename.3 ->
+get_metadata_from_snapshot_storage.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3> ->
+Send.ImageRepo.PrimaryECU.ResponseSnapshotMetadata.SM.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3> ->
+Recv.PrimaryECU.ImageRepo.ResponseSnapshotMetadata.SM.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3, SnapshotContentHeader.TargetsFilename2.3> ->
+get_metadata_from_storage.TargetsFilename1.2 ->
+replace_metadata_from_storage.SnapshotFilename.3 ->
+get_metadata_from_storage.TargetsFilename1.2 ->
+Send.PrimaryECU.ImageRepo.RequestMetadata.Targets.TargetsFilename1.3 ->
+Recv.ImageRepo.PrimaryECU.RequestMetadata.Targets.TargetsFilename1.3 ->
+get_metadata_from_targets_storage.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+Send.ImageRepo.PrimaryECU.ResponseTargetsMetadata.TM.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new> ->
+Recv.PrimaryECU.ImageRepo.ResponseTargetsMetadata.TM.3.3.TargetsPayloadHeader.<TargetsContentHeader.Bad_Image.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Bad_Image.ID_Secondary.HashingFirmware.Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Bad_Image.ID_Primary.HashingFirmware.Firmware_new, TargetsContentHeader.Bad_Image.ID_Secondary.HashingFirmware.Firmware_new> ->
+replace_metadata_from_storage.TargetsFilename1.3 ->
+Do_bad_thing -> RUN(Events)

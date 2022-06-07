@@ -1,0 +1,4 @@
+include "UptaneFullModel.cspm"
+include "Edit\TC1.cspm"
+include "Edit\TC2.cspm"
+assert NoEdit [] TC1 [] TC2 [T= Edit_W_Uptane(2)
