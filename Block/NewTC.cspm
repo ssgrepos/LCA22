@@ -1,0 +1,3 @@
+include "UptaneFullModel.cspm"
+include "Block\TC1.cspm"
+assert Block_Fully_Connected_wo_Tau \ diff(Events, {|Send, SendM, SendS, Recv, RecvM, RecvS|}) [] TC1 [T= Fully_Connected_wo_Tau \ diff(Events, {|Send, SendM, SendS, Recv, RecvM, RecvS|})

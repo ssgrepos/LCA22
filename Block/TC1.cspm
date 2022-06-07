@@ -1,0 +1,3 @@
+TC1=
+SendM.PrimaryECU.Director.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+RecvM.Director.PrimaryECU.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> -> RUN(Events)
