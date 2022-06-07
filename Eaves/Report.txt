@@ -1,0 +1,19 @@
+Report:
+TC1:	lines - 6,	Time - 13.0127578
+TC2:	lines - 9,	Time - 14.505875
+TC3:	lines - 12,	Time - 15.5867848
+TC4:	lines - 15,	Time - 15.6341353
+TC5:	lines - 19,	Time - 17.0742502
+TC6:	lines - 22,	Time - 16.7387124
+TC7:	lines - 26,	Time - 17.4290099
+TC8:	lines - 29,	Time - 18.6950359
+TC9:	lines - 34,	Time - 19.3787291
+TC10:	lines - 37,	Time - 20.070952
+TC11:	lines - 51,	Time - 21.0616232
+TC12:	lines - 54,	Time - 22.4845837
+TC13:	lines - 58,	Time - 23.2697979
+TC14:	lines - 61,	Time - 24.1776756
+TC15:	lines - 65,	Time - 24.9279248
+TC16:	lines - 68,	Time - 26.2454906
+TC17:	lines - 73,	Time - 26.767857
+TC18:	lines - 76,	Time - 27.7545758

@@ -1,0 +1,7 @@
+TC1=
+get_manifesto_from_Secondary_storage.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+ECU_SendM.SecondaryECU.PrimaryECU.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+ECU_RecvM.PrimaryECU.SecondaryECU.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+get_manifesto_from_Primary_storage.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+SendM.PrimaryECU.Director.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+RecvM.Hacker.PrimaryECU.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> -> RUN(Events)
