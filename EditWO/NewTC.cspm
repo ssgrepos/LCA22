@@ -1,0 +1,2 @@
+include  "UptaneFullModel.cspm"
+assert NoEdit [T= Edit_WO_Uptane(2)
