@@ -1,0 +1,287 @@
+
+
+
+
+--------------------- Uptane Model ---------------------
+
+----- info -----
+-- No VIN
+-- No PKey, implied from ECU_ID
+
+--------------------- Data ---------------------
+
+datatype Role = Root | SnapShot | Targets | TimeStamp
+datatype PKey = RolePKey . Role
+datatype Hash = HashingFirmware . Firmware
+datatype Firmware = Firmware_current | Firmware_new 
+datatype ECU_ID = ID_Primary | ID_Secondary
+datatype FilenameMetadataPair = FilenameMetadataPairHeader . FileName . Version
+datatype SKey = RoleSKey . Role
+datatype FileName = File1 | File2 |
+	RootFile | SnapshotFilename | TimeStampFilename | 
+	TargetsFilename1 | TargetsFilename2
+datatype ImageName = Image_current | Image_new | Bad_Image
+datatype Message = RequestMetadata . Role . FileName . Version |
+	ResponseRootMetadata . RootMetadata |
+	ResponseTimestampMetadata . TimestampMetadata |
+	ResponseSnapshotMetadata . SnapshotMetadata |
+	ResponseTargetsMetadata . TargetsMetadata
+
+
+datatype Component = Director | ImageRepo | PrimaryECU | SecondaryECU | Hacker --| Server
+datatype Attack = FreezeAttack | SpoofAttack | DoSAttack | OtherAttack | Pass | Fail
+
+
+----- Channle -----
+
+channel Send : Component . Component . Message
+channel Recv : Component . Component . Message
+
+channel SendM : Component . Component . Manifesto
+channel RecvM : Component . Component . Manifesto
+
+channel SendS : Component . Component . Status
+channel RecvS : Component . Component . Status
+
+channel ECU_Send : Component . Component . Message
+channel ECU_Recv : Component . Component . Message
+
+channel ECU_SendM : Component . Component . ECU_Manifesto
+channel ECU_RecvM : Component . Component . ECU_Manifesto
+
+channel ECU_SendS : Component . Component . Status
+channel ECU_RecvS : Component . Component . Status
+
+channel inform : Attack
+
+----- Other -----
+
+Version = {1..3}
+ExpTime = {1..3}
+max_seqn = 2
+TargetsFilename = {TargetsFilename1, TargetsFilename2}
+TargetsSnapshotFilename = {SnapshotFilename}
+hashing(firmware) = HashingFirmware . firmware
+max_version_number = 3
+next_version(v) = if v<max_version_number then v+1 else v
+public_key(RoleSKey.role) = RolePKey.role
+
+Seq_of_len_n(T, 0) = { <> }
+Seq_of_len_n(T, n) = { <x>^tail | x <- T, tail <- Seqn(T,n-1) }
+Seqn(T, n) = Union({ Seq_of_len_n(T,i) | i <- {0..n}})
+
+---- Manifesto ----
+datatype Manifesto =  ManifestoHeader . Manifesto_Payload 
+datatype FullManifestoPayload = FMPH . Seq(ManifestoPayloadContent)
+datatype ManifestoPayloadContent = MPCH . ECU_ID . Firmware
+Manifesto_Payload = {
+	FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current>,
+	FMPH.<MPCH.ID_Primary.Firmware_new, MPCH.ID_Secondary.Firmware_current>,
+	FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_new>,
+	FMPH.<MPCH.ID_Primary.Firmware_new, MPCH.ID_Secondary.Firmware_new>}
+datatype Status = Update | Fine
+
+datatype ECU_Manifesto =  ECU_ManifestoHeader . ECU_Manifesto_Payload
+datatype ECU_ManifestoPayloadContent = ECU_MPCH . ECU_ID . Firmware
+ECU_Manifesto_Payload = {
+	ECU_MPCH.ID_Secondary.Firmware_current,
+	ECU_MPCH.ID_Secondary.Firmware_new}
+
+
+--------------------- Storage ---------------------
+
+----- Metadata Storage -----
+-- look into 5.4.1. incase (provisioned)
+
+channel get_pkey_from_storage, replace_pkey_from_storage : Role . PKey
+channel get_metadata_from_storage : FileName . Version
+channel remove_role_metadata_from_storage : Role
+channel remove_metadata_from_storage : FileName . Version 
+channel add_metadata_to_storage : FileName . Version
+channel replace_metadata_from_storage : FileName . Version 
+
+get_metadata_file_name(FilenameMetadataPairHeader.file_name.version) = file_name	
+get_metadata_version(FilenameMetadataPairHeader.file_name.version) = version
+
+Metadata_Storage(file_metadatas) = 
+	([] file_metadata : file_metadatas @ 
+	   get_metadata_from_storage.get_metadata_file_name(file_metadata).get_metadata_version(file_metadata) -> Metadata_Storage(file_metadatas))
+	[]
+	([] file_metadata : file_metadatas @ 
+	   remove_metadata_from_storage . get_metadata_file_name(file_metadata).
+	   get_metadata_version(file_metadata)   ->
+	   Metadata_Storage(diff(file_metadatas,{file_metadata}))
+	[]
+	(add_metadata_to_storage?file_name?version -> Metadata_Storage(union(file_metadatas,{FilenameMetadataPairHeader.file_name.version}))))
+
+Role_Metadata_Storage(role, file_metadata, changed) = 
+	(get_metadata_from_storage.get_metadata_file_name(file_metadata).get_metadata_version(file_metadata) -> Role_Metadata_Storage(role, file_metadata, changed))
+	[]
+	(replace_metadata_from_storage.get_metadata_file_name(file_metadata)?version -> Role_Metadata_Storage(role, FilenameMetadataPairHeader.get_metadata_file_name(file_metadata).version, changed))
+
+init_root_metadata = FilenameMetadataPairHeader.RootFile.1
+init_snapshot_metadata = FilenameMetadataPairHeader.SnapshotFilename.1
+init_timestamp_metadata = FilenameMetadataPairHeader.TimeStampFilename.1
+init_targets_metadata = FilenameMetadataPairHeader.TargetsFilename1.1
+
+Metadata_Storage_new = Role_Metadata_Storage(Root, init_root_metadata, 2) ||| Role_Metadata_Storage(SnapShot, init_snapshot_metadata, 2) ||| Role_Metadata_Storage(TimeStamp, init_timestamp_metadata, 2) ||| Role_Metadata_Storage(Targets, init_targets_metadata, 2)
+
+Sec_Metadata_Storage_new = Role_Metadata_Storage(Root, init_root_metadata, 2) ||| Role_Metadata_Storage(SnapShot, init_snapshot_metadata, 2) ||| Role_Metadata_Storage(TimeStamp, init_timestamp_metadata, 2) ||| Role_Metadata_Storage(Targets, init_targets_metadata, 2)
+
+-- assert Metadata_Storage_new [T= STOP
+
+----- Manifesto Storage -----
+
+get_PID_from_manifesto(ManifestoHeader.MFP) = get_PID_from_manifesto_infos(MFP)
+get_PID_from_manifesto_infos(FMPH.<MPCH.PID.PF,MPCH.SID.SF>) = PID
+
+get_SID_from_manifesto(ManifestoHeader.MFP) = get_SID_from_manifesto_infos(MFP)
+get_SID_from_manifesto_infos(FMPH.<MPCH.PID.PF,MPCH.SID.SF>) = SID
+
+get_Pfirmware_from_manifesto(ManifestoHeader.FMPH.<MPCH.PID.PF,MPCH.SID.SF>)  = PF
+get_Sfirmware_from_manifesto(ManifestoHeader.FMPH.<MPCH.PID.PF,MPCH.SID.SF>)  = SF
+
+-- Director
+channel get_manifesto_from_Director_storage : Manifesto
+
+Director_Manifesto_storage() =
+    get_manifesto_from_Director_storage.
+	ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_new, MPCH.ID_Secondary.Firmware_new> ->
+    Director_Manifesto_storage()
+
+
+-- Primary
+channel get_manifesto_from_Primary_storage : Manifesto
+
+Primary_Manifesto_storage() =
+        get_manifesto_from_Primary_storage.ManifestoHeader.FMPH.<MPCH.ID_Primary.Firmware_current, MPCH.ID_Secondary.Firmware_current> ->
+        Primary_Manifesto_storage()
+
+
+-- Secondary
+channel get_manifesto_from_Secondary_storage : ECU_Manifesto
+
+Secondary_Manifesto_storage() =
+        get_manifesto_from_Secondary_storage.ECU_ManifestoHeader.ECU_MPCH.ID_Secondary.Firmware_current ->
+        Secondary_Manifesto_storage()
+
+
+--------------------- Connecting ---------------------
+
+----- Netowrk -----
+
+Network(X) = 
+    ([] a1:X, a2:X @ Send.a1.a2?m -> Recv.a2.a1.m -> Network(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> RecvM.a2.a1.m -> Network(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> RecvS.a2.a1.m -> Network(X))
+
+ECU_Network(X) = 
+    ([] a1:X, a2:X @ ECU_Send.a1.a2?m -> ECU_Recv.a2.a1.m -> ECU_Network(X))
+    [] 
+    ([] a1:X, a2:X @ ECU_SendM.a1.a2?m -> ECU_RecvM.a2.a1.m -> ECU_Network(X))
+	[]
+	([] a1:X, a2:X @ ECU_SendS.a1.a2?m -> ECU_RecvS.a2.a1.m -> ECU_Network(X))
+
+--assert Network({Director, ImageRepo, PrimaryECU}) [T= STOP
+
+----- Sync -----
+
+--Server--
+Director_And_Image_Repo() =
+	Director_Loop() ||| Image_Repo_Loop()
+
+Server_Storage_Root() = 
+	Director_And_Image_Repo()
+	[|{|get_metadata_from_root_storage|}|]
+	Root_Metadata_storage()
+
+Server_Storage_Root_Timestamp() =
+	Server_Storage_Root()
+    [|{|get_metadata_from_timestamp_storage|}|]
+	Timestamp_Metadata_storage()
+
+Server_Storage_Root_Timestamp_Snapshot() = 
+	Server_Storage_Root_Timestamp()
+    [|{|get_metadata_from_snapshot_storage|}|]
+	Snapshot_Metadata_storage()
+
+Server_Metadata() =
+	Server_Storage_Root_Timestamp_Snapshot()
+    [|{|get_metadata_from_targets_storage|}|]
+	Targets_Metadata_storage()
+
+Server() =
+	Server_Metadata()
+	[|{|get_manifesto_from_Director_storage|}|]
+	Director_Manifesto_storage()
+
+--assert Server() [T= STOP
+
+
+--Vehicle--
+Primary_With_Manifesto(current_time) =
+	Primary_ECU_Loop(current_time)
+	[|{|get_manifesto_from_Primary_storage|}|]
+	Primary_Manifesto_storage()
+
+Secondary_With_Manifesto(current_time) = 
+	Secondary_ECU_Loop(current_time)
+	[|{|get_manifesto_from_Secondary_storage|}|]
+	Secondary_Manifesto_storage()
+
+Sec_With_Storage(current_time) =
+	Secondary_With_Manifesto(current_time) 
+	[|{|get_metadata_from_storage,  replace_metadata_from_storage|}|]
+	Metadata_Storage_new
+Sec_Con(current_time) =
+	Sec_With_Storage(current_time)
+	[|{|ECU_Send.SecondaryECU, ECU_Recv.SecondaryECU, ECU_SendM.SecondaryECU, ECU_RecvM.SecondaryECU, ECU_SendS.SecondaryECU, ECU_RecvS.SecondaryECU|}|]
+	ECU_Network({PrimaryECU, SecondaryECU})
+
+Half_Vehicle(current_time) =
+	Primary_With_Manifesto(current_time)
+	[|{|get_metadata_from_storage,  replace_metadata_from_storage|}|]
+	Metadata_Storage_new
+
+Vehicle(current_time) =
+	Sec_Con(current_time)
+	[|{|ECU_Send.PrimaryECU, ECU_Recv.PrimaryECU, ECU_SendM.PrimaryECU, ECU_RecvM.PrimaryECU, ECU_SendS.PrimaryECU, ECU_RecvS.PrimaryECU|}|]
+	Half_Vehicle(current_time)
+
+
+	-- Metadata_Storage({FilenameMetadataPairHeader.RootFile.1,
+	-- FilenameMetadataPairHeader.TimeStampFilename.1,
+	-- FilenameMetadataPairHeader.SnapshotFilename.1,
+	-- FilenameMetadataPairHeader.TargetsFilename1.1})
+
+--assert Vehicle(2) [T= STOP
+
+--Netowrk Connected--
+Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Network({Director, ImageRepo, PrimaryECU})
+
+Uptane(current_time) =
+	Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+
+
+----- includes -----
+include "Vehicle.cspm"
+include "Server.cspm"
+
+
+--------------------- Other ---------------------
+
+current_time = 2
+
+Fully_Connected = Uptane(current_time)
+
+external prioritise
+
+Fully_Connected_wo_Tau = prioritise(Fully_Connected, <{}, Events>)

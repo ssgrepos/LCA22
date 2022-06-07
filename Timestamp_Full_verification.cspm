@@ -1,0 +1,59 @@
+
+
+
+
+--------------------- Timestamp FV ---------------------
+
+----- Info -----
+
+-- Succsessful pass (3) rememebr to remove the passes 2 -> 3.2
+-- Estmated 144 variations
+--
+
+
+----- Gets -----
+
+get_version_TS(TSM.V.T.P.S) = V
+get_signature_TS(TSM.V.T.P.signature) = signature
+get_payload_TS(TSM.V.T.P.s) = P
+get_experation_time_TS(TSM.V.T.P.S) = T
+
+
+----- Keys -----
+
+timestampdecrypt(pkey, EncTS.skey.payload) = 
+	if public_key(skey) == pkey then
+		payload
+	else
+		TSJunk
+
+get_pkey_from_timestamp_payload(role1, TimestampPayload.<role2.pkey>^payload) = 
+	if role1 == role2 then
+		pkey 
+	else
+		get_pkey_from_timestamp_payload(role1, TimestampPayload.payload)
+		
+
+----- Update ----
+
+-- :probe download_and_check_timestamp_metadata(1)
+
+download_and_check_timestamp_metadata(current_time, server) =
+	get_metadata_from_storage.TimeStampFilename?version ->
+	Send.PrimaryECU.server.RequestMetadata.TimeStamp.TimeStampFilename.(next_version(version)) ->
+	Recv.PrimaryECU.server.ResponseTimestampMetadata?timestamp_metadata ->
+	if timestampdecrypt(RolePKey.TimeStamp, get_signature_TS(timestamp_metadata)) != get_payload_TS(timestamp_metadata) then 
+		STOP
+	else
+		--inform.Pass -> -- 1
+		if get_version_TS(timestamp_metadata) <= version then
+			STOP
+		else
+			--inform.Pass -> -- 2
+			if get_experation_time_TS(timestamp_metadata) <= current_time then
+				inform.FreezeAttack ->
+				STOP
+			else
+				--inform.Pass -> -- 3
+				replace_metadata_from_storage.TimeStampFilename.(next_version(version)) ->
+				SKIP

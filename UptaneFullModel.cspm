@@ -1,0 +1,194 @@
+
+
+
+
+--------------------- Attacker ---------------------
+
+--Eavesdropper--
+Eavesdropping_Attack(X) =
+    ([] a1:X, a2:X @ Send.a1.a2?m ->
+        Recv.Hacker.a1.m ->
+        Recv.a2.a1.m -> Eavesdropping_Attack(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m ->
+        RecvM.Hacker.a1.m ->
+        RecvM.a2.a1.m -> Eavesdropping_Attack(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m ->
+        RecvS.Hacker.a1.m ->
+        RecvS.a2.a1.m -> Eavesdropping_Attack(X))
+	[]
+	([] a1:X, a2:X @ Send.a1.a2?m -> Recv.a2.a1.m -> Eavesdropping_Attack(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> RecvM.a2.a1.m -> Eavesdropping_Attack(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> RecvS.a2.a1.m -> Eavesdropping_Attack(X))
+
+--Blocker--
+Blocking_Attack(X) =
+    ([] a1:X, a2:X @ Send.a1.a2?m ->Blocking_Attack(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> Blocking_Attack(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> Blocking_Attack(X))
+	
+--Edit--
+Edit_Attack_W_Key(X) =
+	([] a1:X, a2:X @ Send.a1.a2.ResponseTargetsMetadata?TMData -> 
+		Recv.a2.a1.ResponseTargetsMetadata.TM.get_version_T(TMData).get_experation_time_T(TMData). 
+		TargetsPayloadHeader.<TargetsContentHeader.Bad_Image.ID_Primary.HashingFirmware.Firmware_new,
+		TargetsContentHeader.Bad_Image.ID_Secondary.HashingFirmware.Firmware_new>
+		.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.Bad_Image.ID_Primary.HashingFirmware.Firmware_new,
+		TargetsContentHeader.Bad_Image.ID_Secondary.HashingFirmware.Firmware_new> -> Edit_Attack_WO_Key(X))
+	[]
+	([] a1:X, a2:X @ Send.a1.a2?m -> Recv.a2.a1.m -> Edit_Attack_W_Key(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> RecvM.a2.a1.m -> Edit_Attack_W_Key(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> RecvS.a2.a1.m -> Edit_Attack_W_Key(X))
+
+Edit_Attack_WO_Key(X) =
+	([] a1:X, a2:X @ Send.a1.a2.ResponseTargetsMetadata?TMData -> 
+		Recv.a2.a1.ResponseTargetsMetadata.TM.get_version_T(TMData).get_experation_time_T(TMData). 
+		TargetsPayloadHeader.<TargetsContentHeader.Bad_Image.ID_Primary.HashingFirmware.Firmware_new,
+		TargetsContentHeader.Bad_Image.ID_Secondary.HashingFirmware.Firmware_new>
+		.get_signature_T(TMData) -> Edit_Attack_WO_Key(X))
+	[]
+	([] a1:X, a2:X @ Send.a1.a2?m -> Recv.a2.a1.m -> Edit_Attack_WO_Key(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> RecvM.a2.a1.m -> Edit_Attack_WO_Key(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> RecvS.a2.a1.m -> Edit_Attack_WO_Key(X))
+
+--Spoofing--
+Spoofing_Attack(X) =
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> RecvM.a2.a1.m -> Spoofing_Attack(X))
+    [] 
+    ([] a1:X, a2:X @ Send.a1.a2?m -> Recv.a2.a1.m -> Spoofing_Attack(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> RecvS.a2.a1.Fine -> Spoofing_Attack(X))
+
+--Injection--
+--Injection_Attack() =
+--	()
+	
+--Freeze--
+Freeze_Attack(X)=
+	([] a1:X, a2:X @ Send.a1.a2.ResponseRootMetadata?RMData ->
+	Recv.a2.a1.ResponseRootMetadata.RM.3.1.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root,
+	RolePKeyHeader.TimeStamp.RolePKey.TimeStamp,
+	RolePKeyHeader.SnapShot.RolePKey.SnapShot,
+	RolePKeyHeader.Targets.RolePKey.Targets>.
+	EncR.RoleSKey.Root.RootPayloadHeader.
+	<RolePKeyHeader.Root.RolePKey.Root,
+	RolePKeyHeader.TimeStamp.RolePKey.TimeStamp,
+	RolePKeyHeader.SnapShot.RolePKey.SnapShot,
+	RolePKeyHeader.Targets.RolePKey.Targets> -> Freeze_Attack(X))
+	[]
+	([] a1:X, a2:X @ Send.a1.a2?m -> Recv.a2.a1.m -> Freeze_Attack(X))
+    [] 
+    ([] a1:X, a2:X @ SendM.a1.a2?m -> RecvM.a2.a1.m -> Freeze_Attack(X))
+    []
+    ([] a1:X, a2:X @ SendS.a1.a2?m -> RecvS.a2.a1.m -> Freeze_Attack(X))
+
+
+-- Other --
+channel Do_bad_thing
+-- channel Freeze
+channel Spoof
+
+----- Includes -----
+include "Uptane_model.cspm"
+
+--------------------- Connecting ---------------------
+
+--Eavesdropper--
+Eaves_Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Eavesdropping_Attack({Director, ImageRepo, PrimaryECU})
+
+Eaves_Uptane() =
+	Eaves_Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+
+--Blocker--
+Block_Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Blocking_Attack({Director, ImageRepo, PrimaryECU})
+
+Block_Uptane(current_time) =
+	Block_Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+
+Block_Fully_Connected = Block_Uptane(current_time)
+
+
+Block_Fully_Connected_wo_Tau = prioritise(Block_Fully_Connected, <{}, Events>)
+
+--Edit--
+Edit_W_Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Edit_Attack_W_Key({Director, ImageRepo, PrimaryECU})
+
+Edit_W_Uptane(current_time) =
+	Edit_W_Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+
+
+Edit_WO_Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Edit_Attack_WO_Key({Director, ImageRepo, PrimaryECU})
+
+Edit_WO_Uptane(current_time) =
+	Edit_WO_Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+	
+
+--Spoof--
+Spoof_Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Spoofing_Attack({Director, ImageRepo, PrimaryECU})
+
+Spoof_Uptane(current_time) =
+	Spoof_Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+
+
+--Injection--
+
+
+--Freeze--
+Freeze_Online_Server() =
+	Server()
+	[|{|Send.Director, Recv.Director, SendM.Director, RecvM.Director, SendS.Director, RecvS.Director,
+	Send.ImageRepo, Recv.ImageRepo, SendM.ImageRepo, RecvM.ImageRepo, SendS.ImageRepo, RecvS.ImageRepo|}|]
+	Freeze_Attack({Director, ImageRepo, PrimaryECU})
+
+Freeze_Uptane(current_time) =
+	Freeze_Online_Server()
+	[|{|Send.PrimaryECU, Recv.PrimaryECU, SendM.PrimaryECU, RecvM.PrimaryECU, SendS.PrimaryECU, RecvS.PrimaryECU|}|]
+	Vehicle(current_time)
+
+
+
+--------------------- Assertions ---------------------
+
+NoEaves = RUN(diff(Events,{|Recv.Hacker, RecvM.Hacker, RecvS.Hacker|}))
+NoEdit = RUN(diff(Events,{Do_bad_thing}))
+NoFreeze = RUN(diff(Events,{inform.OtherAttack}))
+NoSpoof = RUN(diff(Events,{inform.SpoofAttack}))

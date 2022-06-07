@@ -1,0 +1,98 @@
+
+
+
+
+--------------------- Timestamp FV ---------------------
+
+----- Info -----
+
+-- Succsessful pass (6) rememebr to remove the passes and the one fail state
+-- Estmated 81 variations
+--
+--
+
+
+----- Gets -----
+
+get_version_T(TM.V.T.P.S) = V
+get_signature_T(TM.V.T.P.signature) = signature
+get_payload_T(TM.V.T.P.S) = P
+get_experation_time_T(TM.V.T.P.S) = T
+get_from_payload_T(TargetsPayloadHeader.<TargetsContentHeader.I.E.H>^tail) = I
+
+get_ECU_IDs(TM.V.T.TargetsPayloadHeader.TPC.S) = get_ECU_IDs_from_Image_Infos(TPC)
+get_ECU_IDs_from_Image_Infos(<>) = {}
+get_ECU_IDs_from_Image_Infos(<TargetsContentHeader.ImageName.ECU_ID.Hash>^imageInfos) = union({ ECU_ID },  get_ECU_IDs_from_Image_Infos(imageInfos))
+
+get_number_of_images(TM.V.T.TargetsPayloadHeader.TPC.S) = get_number_of_images_from_image_infos(TPC)
+get_number_of_images_from_image_infos(<>) = 0
+get_number_of_images_from_image_infos(<TargetsContentHeader.ImageName.ECU_ID.Hash>^imageInfos) = 1 + get_number_of_images_from_image_infos(imageInfos)
+
+
+----- Keys -----
+
+targetsdecrypt(pkey, EncT.skey.payload) = 
+	if public_key(skey) == pkey then
+		payload
+	else
+		TJunk
+
+get_pkey_from_targets_payload(role1, TargetsPayload.<role2.pkey>^payload) = 
+	if role1 == role2 then
+		pkey 
+	else
+		get_pkey_from_targets_payload(role1, TargetsPayload.payload)
+		
+
+----- Update ----
+
+Send_Targets_Secondary(targets_metadata, server) =
+	if server == Director then
+		ECU_SendS.PrimaryECU.SecondaryECU.Update ->
+		ECU_Recv.PrimaryECU.SecondaryECU.RequestMetadata?role?filename?version ->
+		ECU_Send.PrimaryECU.SecondaryECU.ResponseTargetsMetadata.targets_metadata ->
+		ECU_RecvM.PrimaryECU.SecondaryECU?ECU_mani ->
+		SKIP
+	else
+		SKIP
+
+-- :probe download_and_check_targets_metadata(1)
+
+download_and_check_targets_metadata(current_time, server) =
+	get_metadata_from_storage.TargetsFilename1?version ->
+	Send.PrimaryECU.server.RequestMetadata.Targets.TargetsFilename1.(next_version(version)) ->
+	Recv.PrimaryECU.server.ResponseTargetsMetadata?targets_metadata ->
+		if targetsdecrypt(RolePKey.Targets, get_signature_T(targets_metadata)) != get_payload_T(targets_metadata) then
+			STOP
+		else
+			--inform.Pass ->
+			if get_version_T(targets_metadata) <= version then
+				STOP
+			else
+				--inform.Pass ->
+				if get_experation_time_T(targets_metadata) <= current_time then
+					inform.FreezeAttack ->
+					STOP
+				else
+					--inform.Pass ->
+					if get_payload_T(targets_metadata) == TJunk then 
+						STOP
+					else
+						--inform.Pass ->
+						if get_ECU_IDs(targets_metadata) != ECU_ID then
+							inform.Fail ->
+							STOP
+						else
+							--inform.Pass ->
+							if get_number_of_images(targets_metadata) != card(get_ECU_IDs(targets_metadata)) then
+								STOP
+							else
+								--inform.Pass ->
+								replace_metadata_from_storage.TargetsFilename1.(next_version(version)) ->
+								if get_from_payload_T(get_payload_T(targets_metadata)) == Bad_Image then
+									Do_bad_thing ->
+									Send_Targets_Secondary(targets_metadata, server);
+									SKIP
+								else
+									Send_Targets_Secondary(targets_metadata, server);
+									SKIP

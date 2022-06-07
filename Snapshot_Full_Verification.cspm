@@ -1,0 +1,75 @@
+
+
+
+
+--------------------- Snapshot FV ---------------------
+
+----- Info -----
+
+-- Succsessful pass (5) rememebr to remove the passes 2 -> 3.3
+-- Estmated 144 variations
+-- 
+--
+
+
+----- Gets -----
+
+get_version_S(SM.V.T.P.S) = V
+get_signature_S(SM.V.T.P.signature) = signature
+get_payload_S(SM.V.T.P.S) = P
+get_targets_version_from_payload_S(SnapshotPayloadHeader.<>) = 0
+get_targets_version_from_payload_S(SnapshotPayloadHeader.<SnapshotContentHeader . TF . Ve>^tail) = Ve
+get_experation_time_S(SM.V.T.P.S) = T
+
+
+----- Keys -----
+
+snapshotdecrypt(pkey, EncS.skey.payload) = 
+	if public_key(skey) == pkey then
+		payload
+	else
+		SJunk
+
+get_pkey_from_snapshot_payload(role1, SnapshotPayload.<role2.pkey>^payload) = 
+	if role1 == role2 then
+		pkey 
+	else
+		get_pkey_from_snapshot_payload(role1, SnapshotPayload.payload)
+		
+
+----- Update ----
+
+-- :probe download_and_check_Snapshot_metadata(1)
+
+download_and_check_snapshot_metadata(current_time, server) =
+	get_metadata_from_storage.SnapshotFilename?version ->
+	Send.PrimaryECU.server.RequestMetadata.SnapShot.SnapshotFilename.(next_version(version)) ->
+	Recv.PrimaryECU.server.ResponseSnapshotMetadata?snapshot_metadata ->
+	if snapshotdecrypt(RolePKey.SnapShot, get_signature_S(snapshot_metadata)) != get_payload_S(snapshot_metadata) then 
+		STOP
+	else
+	--inform.Pass -> -- 1
+		if get_version_S(snapshot_metadata) <= version then
+	 		STOP
+		else
+			--inform.Pass -> --2
+			if get_payload_S(snapshot_metadata) == SJunk then 
+	 			STOP
+	 		else
+				--inform.Pass -> -- 3
+				get_metadata_from_storage.TargetsFilename1?tversion ->
+	 			if get_targets_version_from_payload_S(get_payload_S(snapshot_metadata)) <= tversion then
+	 				STOP
+	 			else
+	 				--inform.Pass -> -- 4
+	 				if get_experation_time_S(snapshot_metadata) <= current_time then
+	 					inform.FreezeAttack ->
+	 					STOP
+	 				else
+	 					--inform.Pass -> -- 5
+	 					replace_metadata_from_storage.SnapshotFilename.(next_version(version)) ->
+	 					SKIP
+
+
+
+

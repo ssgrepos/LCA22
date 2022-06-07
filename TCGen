@@ -1,0 +1,150 @@
+import sys
+import timeit
+import os
+
+
+### Importing FDR
+sys.path.append("C:\\Program Files\\FDR\\bin")
+import fdr
+fdr.library_init()
+
+
+### Paths
+# TCPath = "C:\\Users\\kirkr\\Documents\\3.1\\3.1"
+
+# AttackPath = "Edit\\"
+# assertion = "NoEdit"
+# system = "[T= Edit_W_Uptane(2)"
+
+# AttackPath = "Block\\"
+# assertion = "Block_Fully_Connected_wo_Tau \ diff(Events, {|Send, SendM, SendS, Recv, RecvM, RecvS|})"
+# system = "[T= Fully_Connected_wo_Tau \ diff(Events, {|Send, SendM, SendS, Recv, RecvM, RecvS|})"
+
+# AttackPath = "Eaves\\"
+# assertion = "NoEaves"
+# system = "[T= Eaves_Uptane()"
+
+# AttackPath = "EditWO\\"
+# assertion = "NoEdit"
+# system = "[T= Edit_WO_Uptane(2)"
+
+# AttackPath = "Freeze\\"
+# assertion = "NoFreeze"
+# system = "[T= Freeze_Uptane(2)"
+
+# AttackPath = "Spoof\\"
+# assertion = "NoSpoof"
+# system = "[T= Spoof_Uptane(2)"
+
+
+def gen_all_test_cases(assertion, system, AttackPath):
+    ### creates the fresh file for the aserions
+    f = open("NewTC.cspm", "w")
+    f.write('include  "UptaneFullModel.cspm"\n')
+    f.write("assert " + assertion + " " + system)
+    f.close()
+
+    ### Creates a fresh report file
+    f = open("Report.txt", "w")
+    f.write("Report:\n")
+    f.close()
+
+    TCCount = 0
+    CounterExamples = []
+
+    while True:
+        Timer = timeit.default_timer() ### Start timer for report
+        ce = call_FDR("NewTC.cspm")
+        Elapsed = timeit.default_timer() - Timer ### Time taken for report
+
+        if ce is not None:
+            TCCount+=1
+            CurrentTC = "TC" + str(TCCount)
+            FileName = CurrentTC + ".cspm"
+            WriteTC(CurrentTC, AttackPath, ce, FileName)
+            Feedback(AttackPath, FileName, CurrentTC, Elapsed)
+            CounterExamples.append(CurrentTC)
+            print("Test cases found: " + str(TCCount))
+            CSPM_Gen(assertion, system, CounterExamples, AttackPath)
+        else:
+            Calc(AttackPath)
+            break
+    return ce
+
+
+def call_FDR(csp_file_name):
+    session = fdr.Session()
+
+    try:
+        print("Loading new session")
+        session.load_file(csp_file_name)
+    except:
+        print("ERROR: Cannot load csp file")
+        return None
+
+    assertion = session.assertions()[0]
+    assertion.execute(None)
+    if assertion.passed():
+        print("Assertion passed, no more counter examples found")
+        return None
+    else:
+        print("Found a counter examples:")
+        ce = compile_counter_example(session, assertion)
+        return ce
+
+
+def compile_counter_example(session, assertion):
+    ce = assertion.counterexamples()[0]
+    trace = ce.implementation_behaviour().trace()
+    event = ce.error_event()
+    ce_trace = list(trace) + [event]
+    return [session.uncompile_event(e).to_string() for e in ce_trace if e>1]
+
+
+def WriteTC(CurrentTC, AttackPath, ce, FileName):
+    NewTC = " ->\n".join(ce)
+    TestCase = CurrentTC + "=\n" + NewTC + " -> RUN(Events)"
+    f = open(AttackPath + FileName, "w")
+    f.write(str(TestCase))
+    f.close()
+
+def Feedback(AttackPath, FileName, CurrentTC, Elapsed):
+    f = open(AttackPath + FileName, "r")
+    lines = 0
+    for line in f:
+        if line != "\n":
+            lines += 1
+    f.close()
+
+    lines -= 1
+
+    f = open("Report.txt", "a")
+    f.write(CurrentTC + ":\tlines - " + str(lines) + ",\tTime - " + str(Elapsed) + "\n")
+    f.close()
+
+
+def CSPM_Gen(assertion, system, CounterExamples, AttackPath):
+    f = open("NewTC.cspm", "w")
+    f.write('include "UptaneFullModel.cspm"\n')
+    for x in CounterExamples:
+        f.write('include "' + AttackPath + x + '.cspm"\n')
+    f.write("assert " + assertion)
+    for x in CounterExamples:
+        f.write(" [] " + x)
+    f.write(" " + system)
+    f.close()
+
+def Calc(AttackPath):
+    print("Moving report")
+    os.rename("Report.txt", AttackPath + "Report.txt")
+    print("Moving NewTC")
+    os.rename("NewTC.cspm", AttackPath + "NewTC.cspm")
+
+# gen_all_test_cases(assertion, system, AttackPath)
+
+gen_all_test_cases("NoEaves", "[T= Eaves_Uptane()", "Eaves\\")
+gen_all_test_cases("NoEdit", "[T= Edit_W_Uptane(2)", "Edit\\")
+gen_all_test_cases("Block_Fully_Connected_wo_Tau \ diff(Events, {|Send, SendM, SendS, Recv, RecvM, RecvS|})", "[T= Fully_Connected_wo_Tau \ diff(Events, {|Send, SendM, SendS, Recv, RecvM, RecvS|})", "Block\\")
+gen_all_test_cases("NoEdit", "[T= Edit_WO_Uptane(2)", "EditWO\\")
+gen_all_test_cases("NoFreeze", "[T= Freeze_Uptane(2)", "Freeze\\")
+gen_all_test_cases("NoSpoof", "[T= Spoof_Uptane(2)", "Spoof\\")

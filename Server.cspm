@@ -1,0 +1,136 @@
+
+
+
+
+--------------------- Server ---------------------
+
+----- Info -----
+
+get_version_from_server_storage(V.E.P.S) = V
+get_exptime_from_server_storage(V.E.P.S) = E
+get_payload_from_server_storage(V.E.P.S) = P
+get_signiture_from_server_storage(V.E.P.S) = S
+
+--Root--
+channel get_metadata_from_root_storage :  Version . ExpTime . RootPayload . SignatureRoot
+
+Root_Metadata_storage() =
+    get_metadata_from_root_storage.3.3.RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root,
+	RolePKeyHeader.TimeStamp.RolePKey.TimeStamp,
+	RolePKeyHeader.SnapShot.RolePKey.SnapShot,
+	RolePKeyHeader.Targets.RolePKey.Targets>.
+	EncR.RoleSKey.Root.RootPayloadHeader.
+	<RolePKeyHeader.Root.RolePKey.Root,
+	RolePKeyHeader.TimeStamp.RolePKey.TimeStamp,
+	RolePKeyHeader.SnapShot.RolePKey.SnapShot,
+	RolePKeyHeader.Targets.RolePKey.Targets> -> Root_Metadata_storage()
+
+--Timestamp--
+channel get_metadata_from_timestamp_storage :  Version . ExpTime . FullTimestampPayload . SignatureTimestamp
+
+Timestamp_Metadata_storage() =
+    get_metadata_from_timestamp_storage.3.3.TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.
+	3.HashingFirmware.Firmware_new.EncTS.RoleSKey.TimeStamp.
+	TimestampPayloadHeader.TimestampContentHeader.SnapshotFilename.
+	3.HashingFirmware.Firmware_new -> Timestamp_Metadata_storage()
+
+--SnapShot--
+channel get_metadata_from_snapshot_storage :  Version . ExpTime . SnapshotPayload . SignatureSnapshot
+
+Snapshot_Metadata_storage() =
+    get_metadata_from_snapshot_storage.3.3.SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3,
+	SnapshotContentHeader.TargetsFilename2.3>.EncS.RoleSKey.SnapShot.
+	SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3,
+	SnapshotContentHeader.TargetsFilename2.3> -> Snapshot_Metadata_storage()
+    
+--Targets--
+channel get_metadata_from_targets_storage :  Version . ExpTime . TargetsPayload . SignatureTargets
+
+Targets_Metadata_storage() =
+    get_metadata_from_targets_storage.3.3.TargetsPayloadHeader.<TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.
+	Firmware_new,TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.
+	Firmware_new>.EncT.RoleSKey.Targets.TargetsPayloadHeader.<TargetsContentHeader.
+	Image_new.ID_Primary.HashingFirmware.Firmware_new,TargetsContentHeader.
+	Image_new.ID_Secondary.HashingFirmware.Firmware_new> -> Targets_Metadata_storage()
+
+----- Other -----
+Check_Manifesto_And_Send_Metadata(role, server) =
+    if role == Root then
+            get_metadata_from_root_storage?root_metadata ->
+            Send.server.PrimaryECU.ResponseRootMetadata.RM.
+            get_version_from_server_storage(root_metadata).
+            get_exptime_from_server_storage(root_metadata).
+            get_payload_from_server_storage(root_metadata).
+            get_signiture_from_server_storage(root_metadata) ->
+            SKIP
+        else if role == TimeStamp then
+            get_metadata_from_timestamp_storage?timestamp_metadata ->
+            Send.server.PrimaryECU.ResponseTimestampMetadata.TSM.
+            get_version_from_server_storage(timestamp_metadata).
+            get_exptime_from_server_storage(timestamp_metadata).
+            get_payload_from_server_storage(timestamp_metadata).
+            get_signiture_from_server_storage(timestamp_metadata) ->
+            SKIP
+        else if role == SnapShot then
+            get_metadata_from_snapshot_storage?snapshot_metadata ->
+            Send.server.PrimaryECU.ResponseSnapshotMetadata.SM.
+            get_version_from_server_storage(snapshot_metadata).
+            get_exptime_from_server_storage(snapshot_metadata).
+            get_payload_from_server_storage(snapshot_metadata).
+            get_signiture_from_server_storage(snapshot_metadata) ->
+            SKIP
+        else if role == Targets then
+            get_metadata_from_targets_storage?targets_metadata ->
+            Send.server.PrimaryECU.ResponseTargetsMetadata.TM.
+            get_version_from_server_storage(targets_metadata).
+            get_exptime_from_server_storage(targets_metadata).
+            get_payload_from_server_storage(targets_metadata).
+            get_signiture_from_server_storage(targets_metadata) ->
+            SKIP
+        else
+            SKIP
+
+
+Server_Role_Get_Resposnse(Server) =
+    Recv.Server.PrimaryECU.RequestMetadata?role?filename?version ->
+    Check_Manifesto_And_Send_Metadata(role, Server);
+    Recv.Server.PrimaryECU.RequestMetadata?role?filename?version ->
+    Check_Manifesto_And_Send_Metadata(role, Server);
+    Recv.Server.PrimaryECU.RequestMetadata?role?filename?version ->
+    Check_Manifesto_And_Send_Metadata(role, Server);
+    Recv.Server.PrimaryECU.RequestMetadata?role?filename?version ->
+    Check_Manifesto_And_Send_Metadata(role, Server)
+
+--------------------- Director ---------------------
+
+----- Info -----
+
+----- Loop -----
+
+Director_Loop() =
+    RecvM.Director.PrimaryECU?rmani ->
+    get_manifesto_from_Director_storage?mani ->
+    if get_Pfirmware_from_manifesto(rmani) == get_Pfirmware_from_manifesto(mani) then
+        if get_Sfirmware_from_manifesto(rmani) == get_Sfirmware_from_manifesto(mani) then
+            SendS.Director.PrimaryECU.Fine ->
+            Director_Loop()
+        else
+            SendS.Director.PrimaryECU.Update ->
+            Server_Role_Get_Resposnse(Director);
+            Director_Loop()
+    else
+        SendS.Director.PrimaryECU.Update ->
+        Server_Role_Get_Resposnse(Director);
+        Director_Loop()
+
+
+--------------------- Image Repo ---------------------
+
+----- Info -----
+
+----- Loop -----
+
+Image_Repo_Loop() =
+    Server_Role_Get_Resposnse(ImageRepo);
+    Image_Repo_Loop()
+

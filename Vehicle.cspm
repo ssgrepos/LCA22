@@ -1,0 +1,129 @@
+
+
+
+
+--------------------- ECUs ---------------------
+
+
+--------------------- Payloads ---------------------
+
+----- Root -----
+datatype RootMetadata = RM . Version . ExpTime . 
+	RootPayload . SignatureRoot
+-- 3 . 3 . 2 . 2 = 36
+datatype SignatureRoot = EncR . RSKey . RootPayload
+-- 1 . 2 = 2
+datatype RootPayloadContent = RolePKeyHeader . Role . PKey
+-- 4 . 4 = 16
+datatype FullRootPayload = RootPayloadHeader . Seq(RootPayloadContent) | RJunk
+-- 2
+RootPayload = { RootPayloadHeader.<RolePKeyHeader.Root.RolePKey.Root,
+	RolePKeyHeader.TimeStamp.RolePKey.TimeStamp,
+	RolePKeyHeader.SnapShot.RolePKey.SnapShot,
+	RolePKeyHeader.Targets.RolePKey.Targets>, RJunk }
+RSKey = {RoleSKey . Root}
+
+----- Timestamp -----
+datatype TimestampMetadata = TSM . Version . ExpTime . 
+	FullTimestampPayload . SignatureTimestamp
+-- 3 . 3 . 7 . 7 = 441
+datatype SignatureTimestamp = EncTS . TSSKey . FullTimestampPayload
+-- 1 . 7
+datatype TimestampPayloadContent = TimestampContentHeader . TargetsSnapshotFilename . Version . Hash
+-- 1 .3 . 2 = 6
+datatype FullTimestampPayload = TimestampPayloadHeader . TimestampPayloadContent | TSJunk
+-- 7
+TSSKey = {RoleSKey . TimeStamp}
+
+----- Snapshot -----
+datatype SnapshotMetadata = SM . Version . ExpTime . 
+	SnapshotPayload . SignatureSnapshot
+-- 3 . 3 . 4 . 4 =  144
+datatype SignatureSnapshot = EncS . SSKey . SnapshotPayload 
+-- 1 . 37 = 37
+datatype SnapshotPayloadContent = SnapshotContentHeader . TargetsFilename . Version
+-- 2 . 3 = 6
+datatype FullSnapshotPayload  = SnapshotPayloadHeader . Seqn(SnapshotPayloadContent, max_seqn) | SJunk
+-- 4
+SnapshotPayload = { SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.1,
+	SnapshotContentHeader.TargetsFilename2.1>,
+	SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.2,
+	SnapshotContentHeader.TargetsFilename2.2>,
+	SnapshotPayloadHeader.<SnapshotContentHeader.TargetsFilename1.3,
+	SnapshotContentHeader.TargetsFilename2.3>, SJunk }
+SSKey = {RoleSKey . SnapShot}
+
+----- Targets -----
+datatype TargetsMetadata = TM . Version . ExpTime . 
+	TargetsPayload . SignatureTargets
+-- 3 . 3 . 3 . 3 = 81
+datatype SignatureTargets = EncT . TSKey . TargetsPayload
+-- 1 . 3
+datatype TargetsPayloadContent = TargetsContentHeader . ImageName . ECU_ID . Hash
+-- 2 . 2 . 2 = 8
+datatype FullTargetsPayload  = TargetsPayloadHeader . Seq(TargetsPayloadContent) | TJunk
+-- 3
+TargetsPayload = {  TargetsPayloadHeader.<
+	TargetsContentHeader.Image_current.ID_Primary.HashingFirmware.Firmware_current, 
+	TargetsContentHeader.Image_current.ID_Secondary.HashingFirmware.Firmware_current>, TargetsPayloadHeader.<
+	TargetsContentHeader.Image_new.ID_Primary.HashingFirmware.Firmware_new,
+	TargetsContentHeader.Image_new.ID_Secondary.HashingFirmware.Firmware_new>,
+	TargetsPayloadHeader.<TargetsContentHeader.Bad_Image.ID_Primary.HashingFirmware.Firmware_new,
+	TargetsContentHeader.Bad_Image.ID_Secondary.HashingFirmware.Firmware_new>, TJunk }
+TSKey = { RoleSKey . Targets }
+
+
+----- Includes -----
+
+include "Root_Full_Verification.cspm"
+include "Timestamp_Full_Verification.cspm"
+include "Snapshot_Full_Verification.cspm"
+include "Targets_Full_Verification.cspm"
+include "Targets_P_Verification.cspm"
+
+
+----- Loop -----
+
+Primary_ECU_Loop(current_time) = -- change name
+	ECU_RecvM.PrimaryECU.SecondaryECU?ECU_mani ->
+	get_manifesto_from_Primary_storage?mani ->
+	SendM.PrimaryECU.Director.ManifestoHeader.FMPH.<MPCH. -- Change sever
+		get_PID_from_manifesto(mani).get_Pfirmware_from_manifesto(mani),MPCH.
+		get_SID_from_manifesto(mani).get_Sfirmware_from_manifesto(mani)> ->
+    RecvS.PrimaryECU.Director?status ->
+    if status == Fine then
+		ECU_SendS.PrimaryECU.SecondaryECU.Fine ->
+		inform.SpoofAttack ->
+        STOP
+    else
+        Download_and_check_Metadata_Full(current_time); -- Change this
+		get_metadata_from_storage.TargetsFilename1?version ->
+		if version == 1 then
+			inform.OtherAttack ->
+			STOP
+		else
+			Primary_ECU_Loop(current_time)
+
+Download_and_check_Metadata_Full(current_time) =
+	download_and_check_root_metadata(current_time, Director);
+	download_and_check_timestamp_metadata(current_time, Director);
+	download_and_check_snapshot_metadata(current_time, Director);
+	download_and_check_targets_metadata(current_time, Director);
+	download_and_check_root_metadata(current_time, ImageRepo);
+	download_and_check_timestamp_metadata(current_time, ImageRepo);
+	download_and_check_snapshot_metadata(current_time, ImageRepo);
+	download_and_check_targets_metadata(current_time, ImageRepo);
+	SKIP
+
+
+Secondary_ECU_Loop(current_time) =
+	get_manifesto_from_Secondary_storage?ECU_mani ->
+	ECU_SendM.SecondaryECU.PrimaryECU.ECU_mani ->
+	ECU_RecvS.SecondaryECU.PrimaryECU?status ->
+	if status == Fine then
+		STOP
+	else
+		download_and_P_check_targets_metadata(current_time);
+		get_manifesto_from_Secondary_storage?ECU_mani ->
+		ECU_SendM.SecondaryECU.PrimaryECU.ECU_mani ->
+		STOP

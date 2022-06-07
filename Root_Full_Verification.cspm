@@ -1,0 +1,65 @@
+
+
+
+
+--------------------- Root FV ---------------------
+
+----- Info -----
+
+-- Succsessful pass (3) rememebr to remove the passes 2 -> 3.2
+-- Estmated 36 variations
+-- 
+
+
+----- Gets -----
+
+get_version_R(RM.V.T.P.S) = V
+get_signature_R(RM.V.T.P.signature) = signature
+get_payload_R(RM.V.T.P.S) = P
+get_experation_time_R(RM.V.T.P.S) = T
+
+----- Keys -----
+
+check_key_rotated(role, pkey) = get_pkey_from_storage.role?current_pkey ->
+	if current_pkey != pkey then	
+		replace_pkey_from_storage.role.pkey -> remove_role_metadata_from_storage.role -> SKIP
+	else
+		SKIP
+
+rootdecrypt(pkey, EncR.skey.payload) = 
+	if public_key(skey) == pkey then
+		payload
+	else
+		RJunk
+
+get_pkey_from_root_payload(role1, RootPayload.<role2.pkey>^payload) = 
+	if role1 == role2 then
+		pkey 
+	else
+		get_pkey_from_root_payload(role1, RootPayload.payload)
+
+
+----- Update -----
+
+-- :probe download_and_check_root_metadata(1)
+
+download_and_check_root_metadata(current_time, server) =
+	get_metadata_from_storage.RootFile?version ->
+	Send.PrimaryECU.server.RequestMetadata.Root.RootFile.(next_version(version)) ->
+	Recv.PrimaryECU.server.ResponseRootMetadata?root_metadata ->
+	if rootdecrypt(RolePKey.Root, get_signature_R(root_metadata)) != get_payload_R(root_metadata) then 
+		STOP
+	else
+		--inform.Pass -> -- 1
+		if get_version_R(root_metadata) <= version then
+			STOP
+		else
+			--inform.Pass -> -- 2
+			if get_experation_time_R(root_metadata) <= current_time then
+				inform.FreezeAttack ->
+				-- Freeze ->
+				STOP
+			else
+				--inform.Pass -> -- 3
+				replace_metadata_from_storage.RootFile.(next_version(version)) ->
+				SKIP

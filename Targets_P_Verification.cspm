@@ -1,0 +1,55 @@
+
+
+
+
+--------------------- Timestamp FV ---------------------
+
+----- Info -----
+
+-- Succsessful pass (6) rememebr to remove the passes and the one fail state
+-- Estmated 81 variations
+--
+--
+		
+
+----- Update ----
+
+-- :probe download_P_and_check_targets_metadata(1)
+
+download_and_P_check_targets_metadata(current_time) =
+	get_metadata_from_storage.TargetsFilename1?version ->
+	ECU_Send.SecondaryECU.PrimaryECU.RequestMetadata.Targets.TargetsFilename1.(next_version(version)) ->
+	ECU_Recv.SecondaryECU.PrimaryECU.ResponseTargetsMetadata?targets_metadata ->
+		if targetsdecrypt(RolePKey.Targets, get_signature_T(targets_metadata)) != get_payload_T(targets_metadata) then
+			STOP
+		else
+			--inform.Pass -> -- 1
+			if get_version_T(targets_metadata) <= version then
+				STOP
+			else
+				--inform.Pass -> -- 2
+				if get_experation_time_T(targets_metadata) <= current_time then
+					inform.FreezeAttack ->
+					STOP
+				else
+					--inform.Pass -> -- 4
+					if get_payload_T(targets_metadata) == TJunk then 
+						STOP
+					else
+						--inform.Pass ->
+						if get_ECU_IDs(targets_metadata) != ECU_ID then
+							--inform.Fail ->
+							STOP
+						else
+							--inform.Pass -> -- 5
+							if get_number_of_images(targets_metadata) != card(get_ECU_IDs(targets_metadata)) then
+							 	STOP
+							else
+								--inform.Pass -> --6
+								if get_from_payload_T(get_payload_T(targets_metadata)) == Bad_Image then
+									Do_bad_thing ->
+									SKIP
+								else
+									SKIP
+
+
